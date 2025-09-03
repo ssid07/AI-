@@ -1,4 +1,4 @@
-namespace ApiService.Todo.Commands;
+namespace ApiService.DataParser.Commands;
 
 using MediatR;
 using Data;
@@ -6,40 +6,46 @@ using Python;
 using Python.Models;
 using System.Text.Json;
 
-public record CreateTodoCommand(string Title) : IRequest<int>;
+public record ParseDataCommand(string InputText) : IRequest<int>;
 
-public class CreateTodoHandler(TodoDbContext context, PythonClient pythonClient) : IRequestHandler<CreateTodoCommand, int>
+public class ParseDataHandler(DataParserDbContext context, PythonClient pythonClient) : IRequestHandler<ParseDataCommand, int>
 {
-    public async Task<int> Handle(CreateTodoCommand request, CancellationToken cancellationToken)
+    public async Task<int> Handle(ParseDataCommand request, CancellationToken cancellationToken)
     {
-        string? category = null;
+        string? parsedJson = null;
+        double confidence = 0.0;
         
         try
         {
-            if (!string.IsNullOrWhiteSpace(request.Title))
+            if (!string.IsNullOrWhiteSpace(request.InputText))
             {
-                var classificationResult = await pythonClient.ClassifyTodo(request.Title);
-                var classification = JsonSerializer.Deserialize<TodoClassification>(classificationResult, new JsonSerializerOptions
+                var parseResult = await pythonClient.ParseData(request.InputText);
+                var parsed = JsonSerializer.Deserialize<DataParseResult>(parseResult, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
-                category = classification?.Category;
+                
+                if (parsed != null)
+                {
+                    parsedJson = JsonSerializer.Serialize(parsed.ParsedData);
+                    confidence = parsed.Confidence;
+                }
             }
         }
         catch
         {
-            // If classification fails, continue without category
-            category = null;
+            // If parsing fails, continue with null values
         }
 
-        var entity = new Todo
+        var entity = new ParsedData
         {
-            Title = request.Title,
-            Category = category,
-            IsComplete = false
+            OriginalInput = request.InputText,
+            ParsedJson = parsedJson,
+            Confidence = confidence,
+            CreatedAt = DateTime.UtcNow
         };
 
-        context.Todos.Add(entity);
+        context.ParsedDataEntries.Add(entity);
 
         await context.SaveChangesAsync(cancellationToken);
 

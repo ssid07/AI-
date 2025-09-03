@@ -1,9 +1,10 @@
-namespace ApiService.Todo.DTO;
+namespace ApiService.DataParser.DTO;
 
-public class TodoItem
+public class ParsedDataItem
 {
     public int Id { get; set; }
-    public string? Title { get; set; }
-    public string? Category { get; set; }
-    public bool IsComplete { get; set; }
+    public string? OriginalInput { get; set; }
+    public string? ParsedJson { get; set; }
+    public double Confidence { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

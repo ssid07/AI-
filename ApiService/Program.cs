@@ -21,12 +21,12 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddEndpointsApiExplorer();
 
 // Add database context
-builder.AddSqlServerDbContext<TodoDbContext>("tododb");
+builder.AddSqlServerDbContext<DataParserDbContext>("tododb");
 
 builder.Services.AddOpenApiDocument(options =>
 {
     options.DocumentName = "v1";
-    options.Title = "Todos API";
+    options.Title = "Data Parser API";
     options.Version = "v1";
     options.UseHttpAttributeNameAsOperationId = true;
 

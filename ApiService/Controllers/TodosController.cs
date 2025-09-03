@@ -2,53 +2,77 @@ namespace ApiService.Controllers;
 
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Todo.Commands;
-using Todo.Queries;
-using Todo.DTO;
+using DataParser.Commands;
+using DataParser.Queries;
+using DataParser.DTO;
 using ApiService.Python;
+using ApiService.Python.Models;
 using System.Text.Json;
 
 [ApiController]
 [Route("api/[controller]")]
-public class TodosController(IMediator mediator, PythonClient pythonClient) : ControllerBase
+public class DataParserController(IMediator mediator, PythonClient pythonClient) : ControllerBase
 {
-    [HttpGet(Name = nameof(GetTodos))]
-    public async Task<IEnumerable<TodoItem>> GetTodos()
+    [HttpGet(Name = nameof(GetParsedData))]
+    public async Task<IEnumerable<ParsedDataItem>> GetParsedData()
     {
-        return await mediator.Send(new GetTodosQuery());
+        return await mediator.Send(new GetParsedDataQuery());
     }
 
-    [HttpPost(Name = nameof(CreateTodo))]
-    public async Task<ActionResult<int>> CreateTodo(CreateTodoCommand command)
+    [HttpPost(Name = nameof(ParseData))]
+    public async Task<ActionResult<int>> ParseData(ParseDataRequest request)
     {
-        return await mediator.Send(command);
+        return await mediator.Send(new ParseDataCommand(request.InputText));
     }
 
-    [HttpPut("{id}", Name = nameof(UpdateTodo))]
-    public async Task<IActionResult> UpdateTodo(int id, UpdateTodoCommandDto dto)
+    [HttpPost("preview", Name = nameof(PreviewParse))]
+    public async Task<IActionResult> PreviewParse([FromBody] ParseDataRequest request)
     {
-        await mediator.Send(new UpdateTodoCommand(id, dto));
-        return NoContent();
-    }
-
-    [HttpDelete("{id}", Name = nameof(DeleteTodo))]
-    public async Task<IActionResult> DeleteTodo(int id)
-    {
-        await mediator.Send(new DeleteTodoCommand(id));
-        return NoContent();
-    }
-
-    [HttpPost("classify", Name = nameof(ClassifyTodo))]
-    public async Task<IActionResult> ClassifyTodo([FromBody] ClassifyTodoRequest request)
-    {
-        var result = await pythonClient.ClassifyTodo(request.Description);
-        var classification = JsonSerializer.Deserialize<TodoClassification>(result, new JsonSerializerOptions
+        var result = await pythonClient.ParseData(request.InputText);
+        var parsed = JsonSerializer.Deserialize<DataParseResult>(result, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         });
-        return Ok(classification);
+        return Ok(parsed);
+    }
+
+    [HttpPost("idcard", Name = nameof(ParseIdCard))]
+    public async Task<IActionResult> ParseIdCard(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("No file uploaded");
+        }
+
+        if (!file.ContentType.StartsWith("image/"))
+        {
+            return BadRequest("File must be an image");
+        }
+
+        const int maxFileSize = 10 * 1024 * 1024; // 10MB
+        if (file.Length > maxFileSize)
+        {
+            return BadRequest("File too large. Maximum size is 10MB");
+        }
+
+        try
+        {
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            var fileBytes = memoryStream.ToArray();
+
+            var result = await pythonClient.ParseIdCard(fileBytes, file.FileName);
+            var parsed = JsonSerializer.Deserialize<IdCardResult>(result, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            return Ok(parsed);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"ID card parsing failed: {ex.Message}");
+        }
     }
 }
 
-public record ClassifyTodoRequest(string Description);
-public record TodoClassification(string Description, string Category, double Confidence);
+public record ParseDataRequest(string InputText);
