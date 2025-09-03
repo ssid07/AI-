@@ -2,7 +2,7 @@
   "x-generator": "NSwag v14.4.0.0 (NJsonSchema v11.3.2.0 (Newtonsoft.Json v13.0.0.0))",
   "openapi": "3.0.0",
   "info": {
-    "title": "Todos API",
+    "title": "Data Parser API",
     "version": "v1"
   },
   "servers": [
@@ -11,12 +11,12 @@
     }
   ],
   "paths": {
-    "/api/Todos": {
+    "/api/DataParser": {
       "get": {
         "tags": [
-          "Todos"
+          "DataParser"
         ],
-        "operationId": "GetTodos",
+        "operationId": "GetParsedData",
         "responses": {
           "200": {
             "description": "",
@@ -25,7 +25,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/TodoItem"
+                    "$ref": "#/components/schemas/ParsedDataItem"
                   }
                 }
               }
@@ -35,15 +35,15 @@
       },
       "post": {
         "tags": [
-          "Todos"
+          "DataParser"
         ],
-        "operationId": "CreateTodo",
+        "operationId": "ParseData",
         "requestBody": {
-          "x-name": "command",
+          "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateTodoCommand"
+                "$ref": "#/components/schemas/ParseDataRequest"
               }
             }
           },
@@ -65,94 +65,18 @@
         }
       }
     },
-    "/api/Todos/{id}": {
-      "put": {
-        "tags": [
-          "Todos"
-        ],
-        "operationId": "UpdateTodo",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "x-position": 1
-          }
-        ],
-        "requestBody": {
-          "x-name": "dto",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTodoCommandDto"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 2
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Todos"
-        ],
-        "operationId": "DeleteTodo",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "x-position": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Todos/classify": {
+    "/api/DataParser/preview": {
       "post": {
         "tags": [
-          "Todos"
+          "DataParser"
         ],
-        "operationId": "ClassifyTodo",
+        "operationId": "PreviewParse",
         "requestBody": {
           "x-name": "request",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ClassifyTodoRequest"
+                "$ref": "#/components/schemas/ParseDataRequest"
               }
             }
           },
@@ -173,11 +97,48 @@
           }
         }
       }
+    },
+    "/api/DataParser/idcard": {
+      "post": {
+        "tags": [
+          "DataParser"
+        ],
+        "operationId": "ParseIdCard",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "TodoItem": {
+      "ParsedDataItem": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -185,45 +146,29 @@
             "type": "integer",
             "format": "int32"
           },
-          "title": {
+          "originalInput": {
             "type": "string",
             "nullable": true
           },
-          "category": {
+          "parsedJson": {
             "type": "string",
             "nullable": true
           },
-          "isComplete": {
-            "type": "boolean"
-          }
-        }
-      },
-      "CreateTodoCommand": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "type": "string"
-          }
-        }
-      },
-      "UpdateTodoCommandDto": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "type": "string"
+          "confidence": {
+            "type": "number",
+            "format": "double"
           },
-          "isComplete": {
-            "type": "boolean"
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
-      "ClassifyTodoRequest": {
+      "ParseDataRequest": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "description": {
+          "inputText": {
             "type": "string"
           }
         }

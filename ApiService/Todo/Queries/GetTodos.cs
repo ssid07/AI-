@@ -1,18 +1,26 @@
-namespace ApiService.Todo.Queries;
+namespace ApiService.DataParser.Queries;
 
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Data;
 using DTO;
 
-public record GetTodosQuery : IRequest<IEnumerable<TodoItem>>;
+public record GetParsedDataQuery : IRequest<IEnumerable<ParsedDataItem>>;
 
-public class GetTodosQueryHandler(TodoDbContext context) : IRequestHandler<GetTodosQuery, IEnumerable<TodoItem>>
+public class GetParsedDataQueryHandler(DataParserDbContext context) : IRequestHandler<GetParsedDataQuery, IEnumerable<ParsedDataItem>>
 {
-    public async Task<IEnumerable<TodoItem>> Handle(GetTodosQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<ParsedDataItem>> Handle(GetParsedDataQuery request, CancellationToken cancellationToken)
     {
-        return await context.Todos
-            .Select(x => new TodoItem { Id = x.Id, Title = x.Title, Category = x.Category, IsComplete = x.IsComplete })
+        return await context.ParsedDataEntries
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new ParsedDataItem 
+            { 
+                Id = x.Id, 
+                OriginalInput = x.OriginalInput, 
+                ParsedJson = x.ParsedJson, 
+                Confidence = x.Confidence,
+                CreatedAt = x.CreatedAt
+            })
             .ToListAsync(cancellationToken);
     }
 }

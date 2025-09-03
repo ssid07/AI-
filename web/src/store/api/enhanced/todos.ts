@@ -1,28 +1,8 @@
 import { todosApi } from "../generated/todos";
 
 export const enhancedTodosApi = todosApi.enhanceEndpoints({
-    addTagTypes: [
-        'TODO', 
-    ],
-    endpoints: {
-        getTodos: {
-            providesTags: ['TODO'],
-        },
-        createTodo: {
-            invalidatesTags: ['TODO'],
-        },
-        updateTodo: {
-            invalidatesTags: ['TODO'],
-        },
-        deleteTodo: {
-            invalidatesTags: ['TODO'],
-        },
-    }
+    addTagTypes: [],
+    endpoints: {}
 });
 
-export const {
-  useGetTodosQuery,
-  useCreateTodoMutation,
-  useUpdateTodoMutation,
-  useDeleteTodoMutation,
-} = enhancedTodosApi;
+// No hooks exported since todos API is deprecated
